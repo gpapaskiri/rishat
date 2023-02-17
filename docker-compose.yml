@@ -1,0 +1,19 @@
+version: '3.7'
+
+
+services:
+  rishat_db:
+    image: postgres:11-alpine
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+  rishat_web:
+    build: .
+    command: python /opt/rishat/manage.py runserver 0.0.0.0:8000
+    volumes:
+      - .:/opt/rishat
+    ports:
+      - 8000:8000
+    depends_on:
+      - rishat_db
+volumes:
+  postgres_data:

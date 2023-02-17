@@ -74,7 +74,7 @@ WSGI_APPLICATION = 'rishat.wsgi.application'
 
 DATABASES = {
     'default': {
-        'ENGINE': 'django.db.backends.postgresql',
+        'ENGINE': 'django.db.backends.postgresql_psycopg2',
         'NAME': 'rishat',
         'USER': 'raziel',
         'PASSWORD': '1q2w3e4r',
