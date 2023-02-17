@@ -27,11 +27,8 @@ def get_item(request, id):
 
 
 def buy_item(request, id):
-    print(f"ID is {id}")
     item_id = id
     item = Item.objects.get(id=item_id)
-    print(item)
-    YOUR_DOMAIN = "http://127.0.0.1:8000"
     checkout_session = stripe.checkout.Session.create(
         payment_method_types=['card'],
         line_items=[
@@ -52,8 +49,8 @@ def buy_item(request, id):
             "product_id": item.id
         },
         mode='payment',
-        success_url=YOUR_DOMAIN + '/success',
-        cancel_url=YOUR_DOMAIN + '/cancel',
+        success_url=settings.DOMAIN + '/success',
+        cancel_url=settings.DOMAIN + '/cancel',
     )
     return JsonResponse(
         {'id': checkout_session.id}
