@@ -20,7 +20,8 @@ shop...
 2. Run "git clone https://github.com/gpapaskiri/rishat.git". In opt will appear folder **rishat**.
 3. Change owner for folder to user with sudoers (for example, **sudo chown username. -R webtronics**).
 4. Move to directory rishat and run **pip install -r requirements.txt**.
-5. In **settings.py** change settings for connecting to database in section **database** and allow hosts in section **
+5. In **settings.py** change settings for connecting to database in section **database**, domain in section **DOMAIN**
+   and allow hosts in section **
    ALLOWD_HOSTS**.
 6. Run **python3 manage.py makemigrations** and **python3 manage.py migrate**. It will create all tables and relations.
 7. Run **python3 manage.py createsuperuser** ande execute all suggested steps.
