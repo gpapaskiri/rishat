@@ -20,7 +20,7 @@ shop...
 2. Run "git clone https://github.com/gpapaskiri/rishat.git". In opt will appear folder **rishat**.
 3. Change owner for folder to user with sudoers (for example, **"sudo chown username. -R rishat"**).
 4. Move to directory rishat and create virtual env, by using command **"python3 -m venv venv"**.
-5. Activate virual env **"source venv/bin/activate** and install requirements **"pip install -r requirements.txt"**.
+5. Activate virual env **"source venv/bin/activate** and install requirements **"pip3 install -r requirements.txt"**.
 
 ## Preconfig
 
