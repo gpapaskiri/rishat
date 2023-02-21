@@ -5,9 +5,9 @@ shop...
 ## Global Requirements
 
 1. Debian-like system
-2. Python 3.10
-3. Pip
-4. Postgres
+2. Python 3.10, python3.10-env
+3. Postgres
+4. Nginx
 
 ## Pre-Installation
 
@@ -18,14 +18,26 @@ shop...
 
 1. Open terminal and change directory to **/opt**.
 2. Run "git clone https://github.com/gpapaskiri/rishat.git". In opt will appear folder **rishat**.
-3. Change owner for folder to user with sudoers (for example, **sudo chown username. -R webtronics**).
-4. Move to directory rishat and run **pip install -r requirements.txt**.
-5. In **settings.py** change settings for connecting to database in section **database**, domain in section **DOMAIN**
-   and allow hosts in section **
-   ALLOWD_HOSTS**.
-6. Run **python3 manage.py makemigrations** and **python3 manage.py migrate**. It will create all tables and relations.
-7. Run **python3 manage.py createsuperuser** ande execute all suggested steps.
-8. Run **python manage.py runserver 0.0.0.0:8000 --insecure**
+3. Change owner for folder to user with sudoers (for example, **"sudo chown username. -R rishat"**).
+4. Move to directory rishat and create virtual env, by using command **"python3 -m venv venv"**.
+5. Activate virual env **"source venv/bin/activate** and install requirements **"pip install -r requirements.txt"**.
+
+## Preconfig
+
+1. In **.env** change set your own settings. Located in the same folder as settings.py.
+2. Create all table and relationship **python3 manage.py makemigrations** and **python3 manage.py migrate**.
+3. Create user for django-admin **python3 manage.py createsuperuser**.
+4. Collect static files **"python3 manage.py collectstatic"**.
+
+## Run server
+
+1. In **/etc/systemd/system/** create 2 files **"gunicorn.socket"** and **"gunicorn.servcice"**.
+2. Run **"sudo systemctl start gunicorn.socket"** and **"sudo systemctl start gunicorn.service"**.
+3. In **/etc/nginx/sites-available/** create file **rishat**.
+4. Create symlink **"sudo ln -s /etc/nginx/sites-available/rishat /etc/nginx/sites-enabled/"**.
+5. Run **"sudo systemctl start nginx"**.
+
+Now server is available on **"http://server_ip"**
 
 ## Usage
 
@@ -33,25 +45,3 @@ Api has 2 GET methods:
 
 1. item/id - return information about product.
 2. buy/id - create stripe session id and redirect to payment form.
-
-## Run as service
-
-Create in **/etc/systemd/system/** file **rishat.service** with next content:
-
-[Unit]\
-Description=Rishat app\
-After=syslog.target\
-After=network.target
-
-[Service]
-Type=simple\
-User=root\
-WorkingDirectory=/opt/rishat\
-ExecStart=/usr/bin/python3 /opt/rishat/manage.py runserver 0.0.0.0:8000 --insecure\
-RestartSec=5\
-Restart=always
-
-[Install]\
-WantedBy=multi-user.target
-
-

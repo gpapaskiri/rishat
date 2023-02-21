@@ -1,0 +1,13 @@
+[Unit]
+Description=gunicorn daemon
+Requires=gunicorn.socket
+After=network.target
+
+[Service]
+User=raziel
+Group=www-data
+WorkingDirectory=/opt/rishat
+ExecStart=/opt/rishat/venv/bin/gunicorn --access-logfile - --workers 3 --bind unix:/run/gunicorn.sock rishat.wsgi: application
+
+[Install]
+WantedBy=multi-user.target
