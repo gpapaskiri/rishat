@@ -8,4 +8,5 @@ urlpatterns = [
     path('cancel', views.CancelView.as_view(), name='cancel'),
     path('success', views.SuccessView.as_view(), name='success'),
     path('webhook/stripe', views.my_webhook_view, name='stripe-webhook'),
+    path('create-payment-intent/<int:id>', views.StripeIntentView.as_view(), name='create-payment-intent'),
 ]

@@ -4,24 +4,45 @@
 <head>
     <title>{{ title }}</title>
     <link rel="stylesheet" href="{% static 'shop/css/style.css' %}">
+    <link rel="stylesheet" href="{% static 'shop/css/checkout.css' %}">
     <script src="https://js.stripe.com/v3/"></script>
 </head>
 <body>
 <section>
     <div class="product">
         <div class="description">
-            <h3>{{ item.name }}</h3>
+            <h3 id="item">{{ item.name }}</h3>
             <h4>{{ item.description }}</h4>
             <h5>{{ item.price }} {{ item.currency.designation }}.</h5>
         </div>
     </div>
-    <button type="submit" id="buy-button">Buy</button>
+    {% comment %}
+    <button id="buy-button">Buy</button>
+    <hr/>
+    {% endcomment %}
+    <form id="payment-form">
+        <div id="link-authentication-element">
+            <!--Stripe.js injects the Link Authentication Element-->
+        </div>
+        <div id="payment-element">
+            <!--Stripe.js injects the Payment Element-->
+        </div>
+        <button id="submit">
+            <div class="spinner hidden" id="spinner"></div>
+            <span id="button-text">Pay now</span>
+        </button>
+        <div id="payment-message" class="hidden"></div>
+    </form>
+    {% csrf_token %}
 </section>
 </body>
 <script type="text/javascript">
     var stripe = Stripe('{{STRIPE_PUBLIC_KEY}}');
     var buyButton = document.getElementById('buy-button');
-    buyButton.addEventListener('click', function () {
+    {% comment %}
+buyButton.addEventListener('click', function () {
+
+
         fetch("{% url 'buy-item' item.id %}")
             .then(function (response) {
                 return response.json();
@@ -38,5 +59,136 @@
                 console.error("Error:", error);
             });
     });
+    {% endcomment %}
+    const csrftoken = document.querySelector('[name=csrfmiddlewaretoken]').value;
+    let elements;
+
+    initialize();
+    checkStatus();
+
+    document
+        .querySelector("#payment-form")
+        .addEventListener("submit", handleSubmit);
+
+    let emailAddress = '';
+
+    // Fetches a payment intent and captures the client secret
+    async function initialize() {
+        const response = await fetch("{% url 'create-payment-intent' item.id %}", {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json",
+                "X-CSRFToken": csrftoken
+            },
+        });
+        const {clientSecret} = await response.json();
+
+        const appearance = {
+            theme: 'stripe',
+        };
+        elements = stripe.elements({appearance, clientSecret});
+
+        const linkAuthenticationElement = elements.create("linkAuthentication");
+        linkAuthenticationElement.mount("#link-authentication-element");
+
+        linkAuthenticationElement.on('change', (event) => {
+            emailAddress = event.value.email;
+        });
+
+        const paymentElementOptions = {
+            layout: "tabs",
+        };
+
+        const paymentElement = elements.create("payment", paymentElementOptions);
+        paymentElement.mount("#payment-element");
+    }
+
+    async function handleSubmit(e) {
+        console.log("In handle");
+        console.log('{{ domain }}');
+        e.preventDefault();
+
+        setLoading(true);
+        const {error} = await stripe.confirmPayment({
+            elements,
+            confirmParams: {
+                // Make sure to change this to your payment completion page
+                return_url: "{{ domain }}{% url 'success' %}",
+                receipt_email: emailAddress
+            }
+        });
+
+
+        // This point will only be reached if there is an immediate error when
+        // confirming the payment. Otherwise, your customer will be redirected to
+        // your `return_url`. For some payment methods like iDEAL, your customer will
+        // be redirected to an intermediate site first to authorize the payment, then
+        // redirected to the `return_url`.
+        if (error.type === "card_error" || error.type === "validation_error") {
+            showMessage(error.message);
+        } else {
+            showMessage("An unexpected error occurred.");
+            console.log(error.message)
+        }
+
+        setLoading(false);
+    }
+
+    // Fetches the payment intent status after payment submission
+    async function checkStatus() {
+        const clientSecret = new URLSearchParams(window.location.search).get(
+            "payment_intent_client_secret"
+        );
+
+        if (!clientSecret) {
+            return;
+        }
+
+        const {paymentIntent} = await stripe.retrievePaymentIntent(clientSecret);
+
+        switch (paymentIntent.status) {
+            case "succeeded":
+                showMessage("Payment succeeded!");
+                break;
+            case "processing":
+                showMessage("Your payment is processing.");
+                break;
+            case "requires_payment_method":
+                showMessage("Your payment was not successful, please try again.");
+                break;
+            default:
+                showMessage("Something went wrong.");
+                break;
+        }
+    }
+
+    // ------- UI helpers -------
+
+
+    function showMessage(messageText) {
+        const messageContainer = document.querySelector("#payment-message");
+
+        messageContainer.classList.remove("hidden");
+        messageContainer.textContent = messageText;
+
+        setTimeout(function () {
+            messageContainer.classList.add("hidden");
+            messageText.textContent = "";
+        }, 4000);
+    }
+
+    // Show a spinner on payment submission
+    function setLoading(isLoading) {
+        if (isLoading) {
+            // Disable the button and show a spinner
+            document.querySelector("#submit").disabled = true;
+            document.querySelector("#spinner").classList.remove("hidden");
+            document.querySelector("#button-text").classList.add("hidden");
+        } else {
+            document.querySelector("#submit").disabled = false;
+            document.querySelector("#spinner").classList.add("hidden");
+            document.querySelector("#button-text").classList.remove("hidden");
+        }
+    }
 </script>
 </html>

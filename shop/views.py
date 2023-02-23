@@ -3,6 +3,7 @@ from django.conf import settings
 from django.core.mail import send_mail
 from django.http import JsonResponse, HttpResponse
 from django.shortcuts import render
+from django.views import View
 from django.views.decorators.csrf import csrf_exempt
 from django.views.generic import TemplateView
 
@@ -23,7 +24,8 @@ class SuccessView(TemplateView):
 def get_item(request, id):
     item = Item.objects.get(id=id)
     return render(request, 'shop/index.html',
-                  {"title": "Shop", "STRIPE_PUBLIC_KEY": settings.STRIPE_PUBLIC_KEY, "item": item})
+                  {"title": "Shop", "STRIPE_PUBLIC_KEY": settings.STRIPE_PUBLIC_KEY, "item": item,
+                   "domain": settings.DOMAIN})
 
 
 def buy_item(request, id):
@@ -55,6 +57,26 @@ def buy_item(request, id):
     return JsonResponse(
         {'id': checkout_session.id}
     )
+
+
+class StripeIntentView(View):
+    def post(self, request, *args, **kwargs):
+        try:
+            item_id = self.kwargs.get("id")
+            item = Item.objects.get(id=item_id)
+            # Create a PaymentIntent with the order amount and currency
+            intent = stripe.PaymentIntent.create(
+                amount=int(item.price * 100),
+                currency=item.currency.name,
+                automatic_payment_methods={
+                    'enabled': True
+                }
+            )
+            return JsonResponse({
+                'clientSecret': intent['client_secret']
+            })
+        except Exception as e:
+            return JsonResponse({"error": str(e)})
 
 
 @csrf_exempt
